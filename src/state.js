@@ -12,12 +12,12 @@ class JServiceState {
 
     }
 
-    stateTemplate = {
-        counter: 0,
-        questions: [
+    // stateTemplate = {
+    //     counter: 0,
+    //     questions: [
             
-        ]
-    }
+    //     ]
+    // }
 
     constructor() {
 
@@ -25,7 +25,12 @@ class JServiceState {
 
     addState(phoneNumber) {
         phoneNumber = toString(phoneNumber);
-        this.states[phoneNumber] = {...this.stateTemplate};
+        this.states[phoneNumber] = {
+            counter: 0,
+            questions: [
+                
+            ]
+        };
         return this.states[phoneNumber];
     }
 
@@ -37,6 +42,12 @@ class JServiceState {
             answer: answer,
             userAnswer: ""
         });
+    }
+
+    nextQuestion(phoneNumber) {
+        phoneNumber = toString(phoneNumber);
+        let counter = this.states[phoneNumber].counter++;
+        return this.states[phoneNumber].questions[counter];
     }
 
     resetState(phoneNumber) {
