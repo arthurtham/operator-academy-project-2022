@@ -55,9 +55,12 @@ router.post("/sms", (req, res) => {
   // Strategy: use the Twilio JS library to send multiple messages instead,
   // based on the text message body
 
+  // Strategy: First, check if the help command is sent.
+  if (req.body.Body === "faq") {
+    sendHelp(req, res);
   // Strategy: First, a game must have been played at least once before the phone number
   // is registered in the states class.
-  if (
+  } else if (
     req.body.Body !== "begin" && 
     !states.getState(req.body.From)
     ) {
@@ -74,11 +77,6 @@ router.post("/sms", (req, res) => {
       case "reset":
         // TODO: end the game
         endGame(req, res);
-        break;
-
-      // Show help
-      case "help":
-      case "faq":
         break;
       
       // Any non-command response runs the "get answer" workflow
@@ -137,7 +135,15 @@ async function nextQuestion(req, res) {
 async function noMoreQuestions(req, res) {
   console.log("No more questions");
   await client.messages
-    .create({body: `No more questions. Use "begin" command to start a session, or "help" for help.`,
+    .create({body: `No more questions. Use "begin" command to start a session, or "faq" for help.`,
+              from: req.body.To, to: req.body.From})
+    .then(message => console.log(message.sid));
+}
+
+async function sendHelp(req, res) {
+  console.log("Help");
+  await client.messages
+    .create({body: `Send "begin" to play, "reset" to end. Type your response to the questions after you begin a session.`,
               from: req.body.To, to: req.body.From})
     .then(message => console.log(message.sid));
 }
