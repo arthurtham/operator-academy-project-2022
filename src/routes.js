@@ -52,29 +52,32 @@ router.post("/sms", (req, res) => {
   res.type(`text/xml`);
   res.send();
 
+  // Strategy: we only care about the alpha letters in the Body for the command
+  let command = req.body.Body.trim().toLowerCase();
+
   // Strategy: use the Twilio JS library to send multiple messages instead,
   // based on the text message body
 
   // Strategy: First, check if the help command is sent.
-  if (req.body.Body === "faq") {
+  if (command === "!faq") {
     sendHelp(req, res);
   // Strategy: First, a game must have been played at least once before the phone number
   // is registered in the states class.
   } else if (
-    req.body.Body !== "begin" && 
+    command !== "!begin" && 
     !states.getState(req.body.From)
     ) {
     noMoreQuestions(req, res);
   } else {
     // Strategy: The player can start, end, or ask for help on how to play the game.
-    switch (req.body.Body) {
+    switch (command) {
       // Start the game
-      case "begin":
+      case "!begin":
         startGame(req, res);
         break;
 
       // End the game
-      case "reset":
+      case "!reset":
         // TODO: end the game
         endGame(req, res);
         break;
@@ -135,7 +138,7 @@ async function nextQuestion(req, res) {
 async function noMoreQuestions(req, res) {
   console.log("No more questions");
   await client.messages
-    .create({body: `No more questions. Use "begin" command to start a session, or "faq" for help.`,
+    .create({body: `No more questions. Use "!begin" command to start a session, or "!faq" for help.`,
               from: req.body.To, to: req.body.From})
     .then(message => console.log(message.sid));
 }
@@ -143,7 +146,7 @@ async function noMoreQuestions(req, res) {
 async function sendHelp(req, res) {
   console.log("Help");
   await client.messages
-    .create({body: `Send "begin" to play, "reset" to end. Type your response to the questions after you begin a session.`,
+    .create({body: `Send "!begin" to play, "!reset" to end. Type your response to the questions after you begin a session.`,
               from: req.body.To, to: req.body.From})
     .then(message => console.log(message.sid));
 }
