@@ -1,3 +1,7 @@
+/**
+ * 
+ */
+
 const express = require("express");
 const router = express.Router();
 
@@ -7,6 +11,9 @@ const client = require('twilio')(accountSid, authToken);
 
 const JServiceState = require("./state.js");
 let states = new JServiceState();
+/**
+ * CHANGE MAXQUESTIONS TO INCREASE THE NUMBER OF QUESTIONS PER SESSION
+ */
 const maxQuestions = 3;
 
 // Axios allows us to make HTTP requests from our app
@@ -18,7 +25,6 @@ async function setQuestions(count=5, phoneNumber) {
     .get(`https://jservice.io/api/random?count=${count}`)
     .then((response) => {
       // The response will have headers and a body. We get the body using `data`.
-      //let public_repos = response.data.public_repos;
       response.data.forEach (function (dataPoint)  {
         //console.log(dataPoint);
         let question = dataPoint.question;
@@ -35,27 +41,47 @@ async function setQuestions(count=5, phoneNumber) {
   return getAxios;
 }
 
-// Handle a POST request to /sms, assume it is a Twilio webhook, and send
-// TWiML in response that creates an SMS reply.
-// REMEMBER: you will have to use ngrok to expose your app to the internet before you can use it with Twilio.
+// Handle a POST request to /sms, assume it is a Twilio webhook.
+// Send responses using Twilio JS library so multiple SMS's can be sent.
 router.post("/sms", (req, res) => {
   console.log(
     `Message received from ${req.body.From}, containing ${req.body.Body}`
   );
 
+  // Strategy: acknowledge the SMS is received by pushing an empty reply
   res.type(`text/xml`);
   res.send();
 
+  // Strategy: use the Twilio JS library to send multiple messages instead,
+  // based on the text message body
+
+  // Strategy: First, a game must have been played at least once before the phone number
+  // is registered in the states class.
   if (
-    req.body.Body !== "start" && 
+    req.body.Body !== "begin" && 
     !states.getState(req.body.From)
     ) {
     noMoreQuestions(req, res);
   } else {
+    // Strategy: The player can start, end, or ask for help on how to play the game.
     switch (req.body.Body) {
-      case "start": 
+      // Start the game
+      case "begin":
         startGame(req, res);
         break;
+
+      // End the game
+      case "reset":
+        // TODO: end the game
+        endGame(req, res);
+        break;
+
+      // Show help
+      case "help":
+      case "faq":
+        break;
+      
+      // Any non-command response runs the "get answer" workflow
       default:
         getAnswer(req, res);
         setTimeout(nextQuestion, 2000, req, res);
@@ -77,27 +103,30 @@ async function startGame(req, res) {
   );
 }
 
+async function endGame(req, res) {
+  states.resetState(req.body.From);
+  client.messages
+    .create({body: `The game has been reset.`,
+              from: req.body.To, to: req.body.From})
+}
+
 async function getAnswer(req, res) {
   let currentState = states.getState(req.body.From);
   //console.log(currentState);
   let currentQuestion = currentState.questions[currentState.counter-1];
   if (currentQuestion) {
     await client.messages
-      .create({body: `Answer: ${currentQuestion.answer.replace(/\W/g, ' ')}`,
+      .create({body: `Answer: ${currentQuestion.answer.replace(/[^\S,.]+/g, ' ')}`,
                 from: req.body.To, to: req.body.From})
       .then(message => console.log(message.sid));
   }
-  // else {
-  //   console.log("no question to reference");
-  //   noMoreQuestions(req, res)
-  // };
 }
 
 async function nextQuestion(req, res) {
   let nextQuestionData = states.nextQuestion(req.body.From);
   if (nextQuestionData) {
     await client.messages
-      .create({body: `Question ${states.getState(req.body.From).counter} (Category: ${nextQuestionData.category.replace(/\W/g, ' ')}):  ${nextQuestionData.question.replace(/\W/g, ' ')}`,
+      .create({body: `Question ${states.getState(req.body.From).counter} (Category: ${nextQuestionData.category.replace(/[^\S,.]+/g, ' ')}):  ${nextQuestionData.question.replace(/[^\S,.]+/g, ' ')}`,
                from: req.body.To, to: req.body.From})
       .then(message => console.log(message.sid));
   } else {
@@ -108,7 +137,7 @@ async function nextQuestion(req, res) {
 async function noMoreQuestions(req, res) {
   console.log("No more questions");
   await client.messages
-    .create({body: `No more questions. Use "start" command to start a session.`,
+    .create({body: `No more questions. Use "begin" command to start a session, or "help" for help.`,
               from: req.body.To, to: req.body.From})
     .then(message => console.log(message.sid));
 }
