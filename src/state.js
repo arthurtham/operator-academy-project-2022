@@ -1,27 +1,11 @@
 /**
- *  states = {
- *  "+19991234567": {
- *          questions: { 1, 2, 3, 4, 5}
- *      }
- *  }
+ * 
  */
 
 class JServiceState {
 
-    states = {
-
-    }
-
-    // stateTemplate = {
-    //     counter: 0,
-    //     questions: [
-            
-    //     ]
-    // }
-
-    constructor() {
-
-    }
+    states = {}
+    constructor() {}
 
     addState(phoneNumber) {
         phoneNumber = toString(phoneNumber);
@@ -48,6 +32,12 @@ class JServiceState {
         phoneNumber = toString(phoneNumber);
         let counter = this.states[phoneNumber].counter++;
         return this.states[phoneNumber].questions[counter];
+    }
+
+    setQuestionCounter(phoneNumber, counter) {
+        phoneNumber = toString(phoneNumber);
+        this.states[phoneNumber].counter = counter;
+        return counter;
     }
 
     resetState(phoneNumber) {
