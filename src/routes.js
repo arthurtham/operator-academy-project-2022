@@ -1,5 +1,7 @@
 /**
- * 
+ * Routes for Twilio JService SMS game
+ * Author: Arthur Tham
+ * Last modified: August 24th, 2022
  */
 
 const express = require("express");
@@ -40,6 +42,13 @@ async function setQuestions(count=5, phoneNumber) {
     });
   return getAxios;
 }
+
+router.get("/", (req, res) => {
+  res.type('html');
+  res.send(`
+    <p>The server is running!</p><p>Link your Twilio SMS webhook to <a href="sms">this link</a>.</p>
+  `)
+})
 
 // Handle a POST request to /sms, assume it is a Twilio webhook.
 // Send responses using Twilio JS library so multiple SMS's can be sent.
