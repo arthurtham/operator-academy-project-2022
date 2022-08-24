@@ -1,3 +1,8 @@
+/**
+ * index.js to run express app
+ * Last modified: August 24th, 2022
+ */
+
 // Import express and the file containing our route definitions
 const express = require("express");
 const app = express();
@@ -17,9 +22,5 @@ app.use("/", routes);
 
 // Start the server
 app.listen(port, () => {
-  /*
-  This is an example of string interpolation via Template Literals.
-  This is an easier way of building strings than we've seen in the JS Test Lab. Read more: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Template_literals
-  */
   console.log(`Your Express application is running on port ${port}`);
 });
